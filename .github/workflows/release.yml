@@ -69,7 +69,7 @@ jobs:
       # Install Dioxus CLI for building the frontend
       # cargo-binstall downloads pre-compiled binaries for faster installation
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@latest
+        uses: cargo-bins/cargo-binstall@v1.15.6
 
       - name: Install Dioxus CLI
         run: cargo binstall dioxus-cli --no-confirm

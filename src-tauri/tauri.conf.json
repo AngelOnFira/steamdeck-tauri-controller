@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "steam-deck-controller",
   "version": "0.1.0",
-  "identifier": "com.steam-deck-controller.app",
+  "identifier": "com.steamdeck-halloween.controller",
   "build": {
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "dx build --release",
