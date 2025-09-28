@@ -66,9 +66,6 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2.0"
-
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         id: tauri-action
