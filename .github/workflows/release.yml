@@ -66,6 +66,14 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      # Install Dioxus CLI for building the frontend
+      # cargo-binstall downloads pre-compiled binaries for faster installation
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@latest
+
+      - name: Install Dioxus CLI
+        run: cargo binstall dioxus-cli --no-confirm
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         id: tauri-action
