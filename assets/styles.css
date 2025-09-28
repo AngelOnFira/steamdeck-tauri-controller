@@ -1,6 +1,3 @@
-.logo.dioxus:hover {
-  filter: drop-shadow(0 0 2em #2076a8);
-}
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -19,41 +16,121 @@
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
+.version-info {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+.version-info p {
+  margin: 0;
+  font-weight: 600;
 }
 
-a:hover {
-  color: #535bf2;
+.server-config {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.server-config input {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.controllers-section {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.controller-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.buttons-grid {
+  margin: 1rem 0;
+}
+
+.buttons-grid h4 {
+  margin-bottom: 0.5rem;
+}
+
+.button {
+  margin: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  background: #e0e0e0;
+}
+
+.button.pressed {
+  background: #4caf50;
+  color: white;
+}
+
+.axes-grid {
+  margin-top: 1.5rem;
+}
+
+.axis-display {
+  margin: 0.5rem 0;
+}
+
+.axis-bar {
+  background: #e0e0e0;
+  height: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.axis-value {
+  background: #2196f3;
+  height: 100%;
+  transition: width 0.1s ease;
+}
+
+.last-event {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.last-event p {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin: 0;
 }
 
 h1 {
   text-align: center;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  margin-top: 0;
 }
 
 input,
@@ -77,6 +154,7 @@ button {
 button:hover {
   border-color: #396cd8;
 }
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
@@ -87,18 +165,30 @@ button {
   outline: none;
 }
 
-#greet-input {
-  margin-right: 5px;
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
     background-color: #2f2f2f;
   }
 
-  a:hover {
-    color: #24c8db;
+  .version-info,
+  .server-config,
+  .controllers-section,
+  .last-event {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .controller-card {
+    background: #1a1a1a;
+  }
+
+  .button {
+    background: #3a3a3a;
+    color: white;
+  }
+
+  .axis-bar {
+    background: #3a3a3a;
   }
 
   input,
@@ -106,6 +196,7 @@ button {
     color: #ffffff;
     background-color: #0f0f0f98;
   }
+  
   button:active {
     background-color: #0f0f0f69;
   }
