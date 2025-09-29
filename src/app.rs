@@ -76,6 +76,15 @@ pub struct EvdevControllerEvent {
     pub timestamp: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateInfo {
+    pub available: bool,
+    pub version: Option<String>,
+    pub current_version: String,
+    pub body: Option<String>,
+    pub date: Option<String>,
+}
+
 pub fn App() -> Element {
     let controllers = use_signal(|| HashMap::<usize, ControllerState>::new());
     let mut server_endpoint = use_signal(|| "0.1.7".to_string());
@@ -88,6 +97,12 @@ pub fn App() -> Element {
     let evdev_devices = use_signal(|| Vec::<EvdevGamepadInfo>::new());
     let steam_deck_info = use_signal(|| "0.1.7".to_string());
     let last_evdev_event = use_signal(|| "0.1.7".to_string());
+    let update_status = use_signal(|| "Not checked".to_string());
+    let update_info = use_signal(|| None::<UpdateInfo>);
+    let is_checking_update = use_signal(|| false);
+    let is_downloading_update = use_signal(|| false);
+    let download_progress = use_signal(|| 0u64);
+    let download_total = use_signal(|| 0u64);
 
     // Poll for connected controllers and debug info
     let mut controllers_clone = controllers.clone();
@@ -128,9 +143,12 @@ pub fn App() -> Element {
         }
     });
 
-    // Listen for gamepad events
+    // Listen for gamepad events and update progress
     let mut last_event_clone = last_event.clone();
     let mut last_evdev_event_clone = last_evdev_event.clone();
+    let mut download_progress_clone = download_progress.clone();
+    let download_total_clone = download_total.clone();
+    let mut update_status_clone = update_status.clone();
     use_effect(move || {
         spawn(async move {
             // Set up gamepad event listener
@@ -160,11 +178,51 @@ pub fn App() -> Element {
                 }
             });
             
+            // Update download started handler
+            let mut download_total_clone2 = download_total_clone.clone();
+            let mut update_status_clone2 = update_status_clone.clone();
+            let download_started_handler = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+                if let Ok(content_length) = serde_wasm_bindgen::from_value::<Option<u64>>(event) {
+                    if let Some(size) = content_length {
+                        download_total_clone2.set(size);
+                        update_status_clone2.set(format!("Downloading update... ({:.2} MB)", size as f64 / 1024.0 / 1024.0));
+                        gloo_console::log!(&format!("Download started - size: {} bytes", size));
+                    }
+                }
+            });
+            
+            // Update download progress handler
+            let download_progress_handler = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+                if let Ok(chunk_length) = serde_wasm_bindgen::from_value::<u64>(event) {
+                    let current = *download_progress_clone.read() + chunk_length;
+                    download_progress_clone.set(current);
+                    
+                    let total = *download_total_clone.read();
+                    if total > 0 {
+                        let percent = (current as f64 / total as f64 * 100.0) as u8;
+                        update_status_clone.set(format!("Downloading... {}%", percent));
+                    }
+                }
+            });
+            
+            // Update installing handler
+            let mut update_status_clone3 = update_status_clone.clone();
+            let installing_handler = Closure::<dyn FnMut(JsValue)>::new(move |_: JsValue| {
+                update_status_clone3.set("Installing update...".to_string());
+                gloo_console::log!("Installing update...");
+            });
+            
             let _ = listen("gamepad-input", &gamepad_handler).await;
             let _ = listen("evdev-gamepad-input", &evdev_handler).await;
+            let _ = listen("update-download-started", &download_started_handler).await;
+            let _ = listen("update-download-progress", &download_progress_handler).await;
+            let _ = listen("update-installing", &installing_handler).await;
             
             gamepad_handler.forget();
             evdev_handler.forget();
+            download_started_handler.forget();
+            download_progress_handler.forget();
+            installing_handler.forget();
         });
     });
 
@@ -190,11 +248,56 @@ pub fn App() -> Element {
         }
     };
 
-    let check_for_updates = move |_| {
-        spawn(async move {
-            // Update check will be implemented with tauri-plugin-updater
-            gloo_console::log!("Checking for updates...");
-        });
+    let check_for_updates = {
+        let update_status = update_status.clone();
+        let update_info = update_info.clone();
+        let is_checking_update = is_checking_update.clone();
+        move |_| {
+            let mut update_status = update_status.clone();
+            let mut update_info = update_info.clone();
+            let mut is_checking_update = is_checking_update.clone();
+            
+            spawn(async move {
+                is_checking_update.set(true);
+                update_status.set("Checking for updates...".to_string());
+                gloo_console::log!("🔍 Starting update check...");
+                
+                let result = invoke_without_args("check_for_updates").await;
+                
+                match result {
+                    Ok(update_data) => {
+                        if let Ok(info) = serde_wasm_bindgen::from_value::<UpdateInfo>(update_data) {
+                            gloo_console::log!("✅ Update check complete");
+                            
+                            if info.available {
+                                update_status.set(format!(
+                                    "Update available: {} → {}",
+                                    info.current_version,
+                                    info.version.as_deref().unwrap_or("unknown")
+                                ));
+                            } else {
+                                update_status.set(format!(
+                                    "You're on the latest version ({})",
+                                    info.current_version
+                                ));
+                            }
+                            
+                            update_info.set(Some(info));
+                        } else {
+                            gloo_console::error!("Failed to parse update info");
+                            update_status.set("Failed to parse update info".to_string());
+                        }
+                    }
+                    Err(e) => {
+                        let error_msg = format!("Error checking updates: {:?}", e);
+                        gloo_console::error!(&error_msg);
+                        update_status.set(error_msg);
+                    }
+                }
+                
+                is_checking_update.set(false);
+            });
+        }
     };
     
     let toggle_debug = {
@@ -219,6 +322,52 @@ pub fn App() -> Element {
             });
         }
     };
+    
+    let exit_app = move |_| {
+        spawn(async move {
+            gloo_console::log!("Exiting application...");
+            let _ = invoke_without_args("exit_app").await;
+        });
+    };
+    
+    let download_and_install = {
+        let update_status = update_status.clone();
+        let is_downloading_update = is_downloading_update.clone();
+        let download_progress = download_progress.clone();
+        let download_total = download_total.clone();
+        
+        move |_| {
+            let mut update_status = update_status.clone();
+            let mut is_downloading_update = is_downloading_update.clone();
+            let mut download_progress = download_progress.clone();
+            let mut download_total = download_total.clone();
+            
+            spawn(async move {
+                is_downloading_update.set(true);
+                update_status.set("Downloading update...".to_string());
+                download_progress.set(0);
+                download_total.set(0);
+                
+                gloo_console::log!("📦 Starting update download...");
+                
+                let result = invoke_without_args("download_and_install_update").await;
+                
+                match result {
+                    Ok(_) => {
+                        gloo_console::log!("✅ Update installed successfully!");
+                        update_status.set("Update installed! Restart the app to apply.".to_string());
+                    }
+                    Err(e) => {
+                        let error_msg = format!("Failed to install update: {:?}", e);
+                        gloo_console::error!(&error_msg);
+                        update_status.set(error_msg);
+                    }
+                }
+                
+                is_downloading_update.set(false);
+            });
+        }
+    };
 
     rsx! {
         link { rel: "stylesheet", href: "styles.css" }
@@ -240,13 +389,70 @@ pub fn App() -> Element {
             div {
                 class: "version-info",
                 p { "Version: {app_version}" }
-                button {
-                    onclick: check_for_updates,
-                    "Check for Updates"
+                
+                div {
+                    class: "update-section",
+                    button {
+                        onclick: check_for_updates,
+                        disabled: *is_checking_update.read(),
+                        if *is_checking_update.read() { "Checking..." } else { "Check for Updates" }
+                    }
+                    p { 
+                        class: "update-status",
+                        "{update_status}" 
+                    }
+                    
+                    if let Some(info) = update_info.read().as_ref() {
+                        if info.available {
+                            div {
+                                class: "update-available",
+                                p { "📦 New version available: {info.version.as_deref().unwrap_or(\"unknown\")}" }
+                                if let Some(body) = &info.body {
+                                    div {
+                                        class: "update-changelog",
+                                        h4 { "What's New:" }
+                                        pre { "{body}" }
+                                    }
+                                }
+                                button {
+                                    class: "update-install-button",
+                                    onclick: download_and_install,
+                                    disabled: *is_downloading_update.read(),
+                                    if *is_downloading_update.read() {
+                                        "Installing..."
+                                    } else {
+                                        "Download and Install"
+                                    }
+                                }
+                                
+                                if *is_downloading_update.read() && *download_total.read() > 0 {
+                                    div {
+                                        class: "download-progress",
+                                        div {
+                                            class: "progress-bar",
+                                            div {
+                                                class: "progress-fill",
+                                                style: "width: {(*download_progress.read() as f64 / *download_total.read() as f64 * 100.0)}%"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                button {
-                    onclick: toggle_debug,
-                    if *show_debug.read() { "Hide Debug" } else { "Show Debug" }
+                
+                div {
+                    class: "button-group",
+                    button {
+                        onclick: toggle_debug,
+                        if *show_debug.read() { "Hide Debug" } else { "Show Debug" }
+                    }
+                    button {
+                        onclick: exit_app,
+                        class: "exit-button",
+                        "Exit"
+                    }
                 }
             }
             

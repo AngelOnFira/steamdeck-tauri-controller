@@ -502,3 +502,101 @@ button:focus {
     transform: translateY(1px);
   }
 }
+
+/* Update System Styles */
+.update-section {
+  margin: 1rem 0;
+}
+
+.update-status {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--neon-cyan);
+  font-weight: 500;
+}
+
+.update-available {
+  background: rgba(0, 102, 204, 0.1);
+  border: 1px solid var(--steam-accent);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.update-available p {
+  margin: 0 0 0.5rem 0;
+  color: var(--neon-cyan);
+}
+
+.update-changelog {
+  margin-top: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.update-changelog h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.update-changelog pre {
+  background: var(--surface-2);
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.update-install-button {
+  background: linear-gradient(135deg, var(--neon-green) 0%, var(--steam-accent-light) 100%);
+  color: var(--steam-dark);
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+}
+
+.update-install-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-green) 100%);
+  transform: translateY(-2px);
+}
+
+.update-install-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.download-progress {
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-green) 0%, var(--neon-cyan) 100%);
+  transition: width 0.3s ease;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.exit-button {
+  background: linear-gradient(135deg, var(--neon-pink) 0%, var(--neon-orange) 100%);
+  color: white;
+  font-weight: bold;
+}
+
+.exit-button:hover {
+  background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-pink) 100%);
+  transform: translateY(-2px);
+}

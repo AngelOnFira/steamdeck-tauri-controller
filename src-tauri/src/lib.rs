@@ -53,6 +53,9 @@ pub fn run() {
             commands::get_evdev_devices,
             commands::rescan_evdev_devices,
             commands::get_steam_deck_info,
+            commands::check_for_updates,
+            commands::download_and_install_update,
+            commands::exit_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
