@@ -34,13 +34,6 @@ if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 1
 fi
 
-# Check if we're on a clean working directory
-if ! git diff-index --quiet HEAD --; then
-    echo -e "${RED}Working directory has uncommitted changes!${NC}"
-    echo "Please commit or stash changes before releasing."
-    exit 1
-fi
-
 # Check if tag already exists
 if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
     echo -e "${RED}Tag v$NEW_VERSION already exists!${NC}"
