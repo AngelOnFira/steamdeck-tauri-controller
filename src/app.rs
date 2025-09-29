@@ -36,9 +36,9 @@ pub struct ControllerEvent {
 
 pub fn App() -> Element {
     let controllers = use_signal(|| HashMap::<usize, ControllerState>::new());
-    let mut server_endpoint = use_signal(|| "0.1.1".to_string());
+    let mut server_endpoint = use_signal(|| "0.1.2".to_string());
     let last_event = use_signal(|| String::new());
-    let app_version = use_signal(|| "0.1.1".to_string());
+    let app_version = use_signal(|| "0.1.2".to_string());
 
     // Poll for connected controllers on mount
     let mut controllers_clone = controllers.clone();
