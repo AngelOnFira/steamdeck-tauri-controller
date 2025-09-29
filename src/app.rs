@@ -1,20 +1,24 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
+use gloo_timers::future::TimeoutFuture;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "core"])]
-    async fn invoke(cmd: &str, args: JsValue) -> JsValue;
+    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "core"], catch)]
+    async fn invoke(cmd: &str, args: JsValue) -> Result<JsValue, JsValue>;
     
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "core"])]
-    async fn invoke_without_args(cmd: &str) -> JsValue;
-    
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "event"])]
-    async fn listen(event: &str, handler: &Closure<dyn FnMut(JsValue)>) -> JsValue;
+    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "event"], catch)]
+    async fn listen(event: &str, handler: &Closure<dyn FnMut(JsValue)>) -> Result<JsValue, JsValue>;
+}
+
+// Helper function to invoke commands without arguments
+async fn invoke_without_args(cmd: &str) -> Result<JsValue, JsValue> {
+    let empty_args = serde_wasm_bindgen::to_value(&serde_json::json!({})).unwrap();
+    invoke(cmd, empty_args).await
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,7 +83,7 @@ pub fn App() -> Element {
     let app_version = use_signal(|| "0.1.2".to_string());
     let debug_info = use_signal(|| None::<DebugInfo>);
     let mut mouse_position = use_signal(|| (0.0, 0.0));
-    let mut show_debug = use_signal(|| true);
+    let show_debug = use_signal(|| true);
     let mut last_key_event = use_signal(|| "None".to_string());
     let evdev_devices = use_signal(|| Vec::<EvdevGamepadInfo>::new());
     let steam_deck_info = use_signal(|| "Loading...".to_string());
@@ -93,38 +97,44 @@ pub fn App() -> Element {
     use_coroutine(move |_: UnboundedReceiver<()>| async move {
         loop {
             // Get controller states
-            let result = invoke_without_args("get_connected_controllers").await;
-            if let Ok(controllers_map) = serde_wasm_bindgen::from_value::<HashMap<usize, ControllerState>>(result) {
-                controllers_clone.set(controllers_map);
+            if let Ok(result) = invoke_without_args("get_connected_controllers").await {
+                if let Ok(controllers_map) = serde_wasm_bindgen::from_value::<HashMap<usize, ControllerState>>(result) {
+                    controllers_clone.set(controllers_map);
+                }
             }
             
             // Get debug info
-            let debug_result = invoke_without_args("get_debug_info").await;
-            if let Ok(debug_data) = serde_wasm_bindgen::from_value::<DebugInfo>(debug_result) {
-                debug_info_clone.set(Some(debug_data));
+            if let Ok(debug_result) = invoke_without_args("get_debug_info").await {
+                if let Ok(debug_data) = serde_wasm_bindgen::from_value::<DebugInfo>(debug_result) {
+                    debug_info_clone.set(Some(debug_data));
+                }
             }
             
             // Get evdev devices
-            let evdev_result = invoke_without_args("get_evdev_devices").await;
-            if let Ok(evdev_data) = serde_wasm_bindgen::from_value::<Vec<EvdevGamepadInfo>>(evdev_result) {
-                evdev_devices_clone.set(evdev_data);
+            if let Ok(evdev_result) = invoke_without_args("get_evdev_devices").await {
+                if let Ok(evdev_data) = serde_wasm_bindgen::from_value::<Vec<EvdevGamepadInfo>>(evdev_result) {
+                    evdev_devices_clone.set(evdev_data);
+                }
             }
             
             // Get Steam Deck info
-            let steam_result = invoke_without_args("get_steam_deck_info").await;
-            if let Ok(steam_data) = serde_wasm_bindgen::from_value::<String>(steam_result) {
-                steam_deck_info_clone.set(steam_data);
+            if let Ok(steam_result) = invoke_without_args("get_steam_deck_info").await {
+                if let Ok(steam_data) = serde_wasm_bindgen::from_value::<String>(steam_result) {
+                    steam_deck_info_clone.set(steam_data);
+                }
             }
             
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            TimeoutFuture::new(1000).await;
         }
     });
 
     // Listen for gamepad events
     let mut last_event_clone = last_event.clone();
+    let mut last_evdev_event_clone = last_evdev_event.clone();
     use_effect(move || {
         spawn(async move {
-            let handler = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+            // Set up gamepad event listener
+            let gamepad_handler = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
                 if let Ok(event_data) = serde_wasm_bindgen::from_value::<ControllerEvent>(event) {
                     last_event_clone.set(format!(
                         "Controller {}: {} - {:?}{:?} = {:?}",
@@ -137,16 +147,8 @@ pub fn App() -> Element {
                 }
             });
             
-            let _ = listen("gamepad-input", &handler).await;
-            handler.forget();
-        });
-    });
-
-    // Listen for evdev gamepad events
-    let mut last_evdev_event_clone = last_evdev_event.clone();
-    use_effect(move || {
-        spawn(async move {
-            let handler = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+            // Set up evdev event listener
+            let evdev_handler = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
                 if let Ok(event_data) = serde_wasm_bindgen::from_value::<EvdevControllerEvent>(event) {
                     last_evdev_event_clone.set(format!(
                         "EVDEV {}: {} code={} value={}",
@@ -158,8 +160,11 @@ pub fn App() -> Element {
                 }
             });
             
-            let _ = listen("evdev-gamepad-input", &handler).await;
-            handler.forget();
+            let _ = listen("gamepad-input", &gamepad_handler).await;
+            let _ = listen("evdev-gamepad-input", &evdev_handler).await;
+            
+            gamepad_handler.forget();
+            evdev_handler.forget();
         });
     });
 
@@ -204,9 +209,12 @@ pub fn App() -> Element {
         let mut evdev_devices = evdev_devices.clone();
         move |_| {
             spawn(async move {
-                let result = invoke_without_args("rescan_evdev_devices").await;
-                if let Ok(devices) = serde_wasm_bindgen::from_value::<Vec<EvdevGamepadInfo>>(result) {
-                    evdev_devices.set(devices);
+                // Add a small delay to prevent rapid successive calls
+                TimeoutFuture::new(100).await;
+                if let Ok(result) = invoke_without_args("rescan_evdev_devices").await {
+                    if let Ok(devices) = serde_wasm_bindgen::from_value::<Vec<EvdevGamepadInfo>>(result) {
+                        evdev_devices.set(devices);
+                    }
                 }
             });
         }

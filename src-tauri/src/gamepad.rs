@@ -1,6 +1,7 @@
-use gilrs::{Axis, Button, Event, EventType, Gilrs, GamepadId};
+use gilrs::{Axis, Button, Event, EventType, Gilrs};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::os::unix::fs::PermissionsExt;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
@@ -50,7 +51,7 @@ pub struct GamepadManager {
 impl GamepadManager {
     pub fn new() -> Result<Self, String> {
         println!("🎮 Initializing GamepadManager...");
-        let mut gilrs = Gilrs::new().map_err(|e| format!("Failed to initialize gamepad: {}", e))?;
+        let gilrs = Gilrs::new().map_err(|e| format!("Failed to initialize gamepad: {}", e))?;
         
         // Log all available gamepads at startup
         println!("🔍 Scanning for gamepads at startup...");
@@ -69,7 +70,7 @@ impl GamepadManager {
     pub fn poll_events(&self, app: &AppHandle) {
         let mut gilrs = self.gilrs.lock().unwrap();
         
-        while let Some(Event { id, event, time }) = gilrs.next_event() {
+        while let Some(Event { id, event, time: _, .. }) = gilrs.next_event() {
             let controller_id = id.into();
             let timestamp = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -240,7 +241,7 @@ impl GamepadManager {
             checks.push(format!("✅ Found {} /dev/input/event* devices", event_devices.len()));
             
             // Check permissions on first few devices
-            for (i, device) in event_devices.iter().take(3).enumerate() {
+            for (_i, device) in event_devices.iter().take(3).enumerate() {
                 match std::fs::metadata(device) {
                     Ok(metadata) => {
                         let mode = metadata.permissions().mode();
