@@ -72,19 +72,10 @@ echo -e "${YELLOW}Ready to push the following:${NC}"
 git log --oneline -1
 echo "Tag: v$NEW_VERSION"
 
-echo -e "${YELLOW}Push to remote? (y/n)${NC}"
-read -r CONFIRM
+echo -e "${GREEN}Pushing to origin...${NC}"
+git push
+git push origin "v$NEW_VERSION"
 
-if [[ "$CONFIRM" == "y" || "$CONFIRM" == "Y" ]]; then
-    echo -e "${GREEN}Pushing to origin...${NC}"
-    git push origin main
-    git push origin "v$NEW_VERSION"
-    
-    echo -e "${GREEN}✅ Release v$NEW_VERSION pushed successfully!${NC}"
-    echo -e "${GREEN}GitHub Actions will now build and create the release.${NC}"
-    echo -e "${GREEN}Check the Actions tab on GitHub for build progress.${NC}"
-else
-    echo -e "${YELLOW}Push cancelled. To push manually:${NC}"
-    echo "  git push origin main"
-    echo "  git push origin v$NEW_VERSION"
-fi
+echo -e "${GREEN}✅ Release v$NEW_VERSION pushed successfully!${NC}"
+echo -e "${GREEN}GitHub Actions will now build and create the release.${NC}"
+echo -e "${GREEN}Check the Actions tab on GitHub for build progress.${NC}"
