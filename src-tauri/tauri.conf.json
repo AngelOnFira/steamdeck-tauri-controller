@@ -13,8 +13,12 @@
     "windows": [
       {
         "title": "steam-deck-controller",
-        "width": 800,
-        "height": 600
+        "width": 1280,
+        "height": 800,
+        "fullscreen": true,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true
       }
     ],
     "security": {
