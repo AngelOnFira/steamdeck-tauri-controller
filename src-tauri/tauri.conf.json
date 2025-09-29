@@ -6,7 +6,7 @@
   "build": {
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "dx build --release",
-    "frontendDist": "../dist"
+    "frontendDist": "../target/dx/steam-deck-controller-ui/release/web/public"
   },
   "app": {
     "withGlobalTauri": true,

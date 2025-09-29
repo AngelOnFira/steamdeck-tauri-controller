@@ -139,13 +139,14 @@ pub fn App() -> Element {
                         let controller_id = *id;
                         let buttons_elements = controller.buttons.iter().map(|(button, pressed)| {
                             let button_name = button.clone();
+                            let button_action = button.clone();
                             let is_pressed = *pressed;
                             rsx! {
                                 button {
                                     key: "{button_name}",
                                     class: if is_pressed { "button pressed" } else { "button" },
                                     onclick: move |_| {
-                                        send_to_server(controller_id, format!("button:{}", button_name));
+                                        send_to_server(controller_id, format!("button:{}", button_action));
                                     },
                                     "{button_name}: {is_pressed}"
                                 }
