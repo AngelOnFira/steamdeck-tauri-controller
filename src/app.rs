@@ -87,17 +87,17 @@ pub struct UpdateInfo {
 
 pub fn App() -> Element {
     let controllers = use_signal(|| HashMap::<usize, ControllerState>::new());
-    let mut server_endpoint = use_signal(|| "0.1.9".to_string());
+    let mut server_endpoint = use_signal(|| "0.1.10".to_string());
     let last_event = use_signal(|| String::new());
-    let app_version = use_signal(|| "0.1.9".to_string());
+    let app_version = use_signal(|| "0.1.10".to_string());
     let debug_info = use_signal(|| None::<DebugInfo>);
     let mut mouse_position = use_signal(|| (0.0, 0.0));
     let show_debug = use_signal(|| true);
-    let mut last_key_event = use_signal(|| "0.1.9".to_string());
+    let mut last_key_event = use_signal(|| "0.1.10".to_string());
     let evdev_devices = use_signal(|| Vec::<EvdevGamepadInfo>::new());
-    let steam_deck_info = use_signal(|| "0.1.9".to_string());
-    let last_evdev_event = use_signal(|| "0.1.9".to_string());
-    let update_status = use_signal(|| "0.1.9".to_string());
+    let steam_deck_info = use_signal(|| "0.1.10".to_string());
+    let last_evdev_event = use_signal(|| "0.1.10".to_string());
+    let update_status = use_signal(|| "0.1.10".to_string());
     let update_info = use_signal(|| None::<UpdateInfo>);
     let is_checking_update = use_signal(|| false);
     let is_downloading_update = use_signal(|| false);
