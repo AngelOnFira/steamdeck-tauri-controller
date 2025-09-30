@@ -66,18 +66,16 @@ jobs:
 
       - name: Setup Rust cache
         uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
 
-      # Cache dx build artifacts to speed up frontend builds
-      - name: Cache dx build
-        uses: actions/cache@v3
-        with:
-          path: |
-            target/dx/
-          key: ${{ runner.os }}-dx-${{ hashFiles('**/Cargo.lock', 'Dioxus.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-dx-
+      # # Cache dx build artifacts to speed up frontend builds
+      # - name: Cache dx build
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       target/dx/
+      #     key: ${{ runner.os }}-dx-${{ hashFiles('**/Cargo.lock', 'Dioxus.toml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-dx-
 
       # Cache Cargo registry and git dependencies for dx
       - name: Cache Cargo registry and git
