@@ -36,6 +36,9 @@ jobs:
           - platform: 'ubuntu-22.04'
             args: ''
             target: 'x86_64-unknown-linux-gnu'
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            target: 'aarch64-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
