@@ -13,6 +13,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let gamepad_manager = GamepadManager::new()
                 .expect("Failed to initialize gamepad manager");
@@ -56,6 +57,7 @@ pub fn run() {
             commands::check_for_updates,
             commands::download_and_install_update,
             commands::exit_app,
+            commands::restart_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

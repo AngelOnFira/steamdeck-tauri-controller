@@ -188,3 +188,15 @@ pub async fn exit_app(
     app_handle.exit(0);
     Ok(())
 }
+
+#[tauri::command]
+pub async fn restart_app(
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    println!("🔄 Restarting application...");
+    
+    // Use the process plugin to restart the app
+    app.request_restart();
+    
+    Ok("Restarting...".to_string())
+}

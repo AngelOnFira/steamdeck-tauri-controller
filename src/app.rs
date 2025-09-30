@@ -355,7 +355,13 @@ pub fn App() -> Element {
                 match result {
                     Ok(_) => {
                         gloo_console::log!("✅ Update installed successfully!");
-                        update_status.set("Update installed! Restart the app to apply.".to_string());
+                        update_status.set("Update installed! Restarting application...".to_string());
+                        
+                        // Wait a moment to show the message, then restart
+                        TimeoutFuture::new(2000).await;
+                        
+                        gloo_console::log!("🔄 Triggering application restart...");
+                        let _ = invoke_without_args("restart_app").await;
                     }
                     Err(e) => {
                         let error_msg = format!("Failed to install update: {:?}", e);
